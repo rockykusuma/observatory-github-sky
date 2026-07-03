@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/gh-trending/:path*",
+      "destination": "https://github.com/trending/:path*"
+    },
+    {
+      "source": "/gh-trending",
+      "destination": "https://github.com/trending"
+    }
+  ]
+}
