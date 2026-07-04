@@ -581,6 +581,27 @@ button {
   z-index: -1;
 }
 
+.tab-pill.nebula {
+  background: linear-gradient(120deg, #7c74ff, #d9468b);
+}
+
+.tab-pill.nebula ~ * {
+  color: var(--void);
+}
+
+/* ---------- AI topic chips ---------- */
+.topic-chip {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #c9c4ff;
+  border: 1px solid rgba(124, 116, 255, 0.35);
+  background: rgba(124, 116, 255, 0.1);
+  white-space: nowrap;
+}
+
 .select {
   appearance: none;
   padding: 9px 34px 9px 16px;

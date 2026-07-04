@@ -3,6 +3,7 @@ import Starfield from "./components/Starfield.jsx";
 import Hero from "./components/Hero.jsx";
 import Almanac from "./components/Almanac.jsx";
 import SkyChart from "./components/SkyChart.jsx";
+import AINebula from "./components/AINebula.jsx";
 import Leaderboard from "./components/Leaderboard.jsx";
 import TimeMachine from "./components/TimeMachine.jsx";
 import EclipseWatch from "./components/EclipseWatch.jsx";
@@ -38,6 +39,7 @@ export default function App() {
         <Hero />
         <Almanac />
         <SkyChart />
+        <AINebula />
         <Leaderboard />
         <TimeMachine />
         <EclipseWatch />

@@ -81,6 +81,58 @@ export async function searchTopRepos({ from, to, language, perPage = 10, ttlMs =
   return items;
 }
 
+// ---------- AI Nebula ----------
+// A cluster of the sky's AI stars. GitHub search OR-matches these terms across
+// name / description / topics; sorting by stars surfaces the field's giants.
+const AI_QUERY =
+  "llm OR machine-learning OR deep-learning OR generative-ai OR ai-agents OR neural-network";
+
+export const AI_MODES = [
+  { id: "alltime", label: "All-Time Giants", note: "the most-starred AI repositories ever" },
+  { id: "year", label: "This Year", note: "top AI repos born in the last 365 days", days: 365 },
+  { id: "fresh", label: "Fresh · 90d", note: "AI repos born in the last 90 days", days: 90 },
+];
+
+/**
+ * Search the AI corner of GitHub, ranked by stars.
+ * @param {object} opts
+ * @param {"alltime"|"year"|"fresh"} [opts.mode]
+ * @param {number} [opts.perPage]
+ */
+export async function searchAIRepos({ mode = "alltime", perPage = 12, ttlMs = 30 * 60 * 1000 } = {}) {
+  const m = AI_MODES.find((x) => x.id === mode) || AI_MODES[0];
+  let q = AI_QUERY;
+  if (m.days) q += ` created:>${daysAgo(m.days)}`;
+  const query = `${API}?q=${encodeURIComponent(q)}&sort=stars&order=desc&per_page=${perPage}`;
+
+  const cached = readCache(query, ttlMs);
+  if (cached) return cached;
+
+  const res = await fetch(query, { headers: { Accept: "application/vnd.github+json" } });
+  if (res.status === 403 || res.status === 429) {
+    const stale = readCache(query, Infinity);
+    if (stale) return stale;
+    throw new Error("rate-limit");
+  }
+  if (!res.ok) throw new Error(`GitHub API ${res.status}`);
+
+  const json = await res.json();
+  const items = (json.items || []).map((r) => ({
+    id: r.id,
+    name: r.name,
+    owner: r.owner?.login ?? "",
+    avatar: r.owner?.avatar_url ?? "",
+    url: r.html_url,
+    description: r.description,
+    stars: r.stargazers_count,
+    language: r.language,
+    createdAt: r.created_at,
+    topics: (r.topics || []).slice(0, 3),
+  }));
+  writeCache(query, items);
+  return items;
+}
+
 /**
  * GitHub's OFFICIAL trending — repos ranked by stars gained today/this week/
  * this month, regardless of repo age. No public API exists, so we fetch the

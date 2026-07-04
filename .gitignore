@@ -28,8 +28,12 @@ pnpm-debug.log*
 # Local tooling / skills cache
 .claude/
 
+# Vercel
+.vercel/
+
 # Env / secrets
 .env
 .env.*
 !.env.example
 .mcp.json
+.vercel
