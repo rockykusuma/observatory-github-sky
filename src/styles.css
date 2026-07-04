@@ -443,8 +443,92 @@ button {
 }
 
 @keyframes starPulse {
-  0%, 100% { opacity: 0.75; }
-  50% { opacity: 1; }
+  0%, 100% { opacity: 0.7; transform: scale(0.94); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+
+/* ---- animated dome: slow parallax drift of the whole sky ---- */
+.plan-dome {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 45%;
+  animation: domeDrift 48s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes domeDrift {
+  from { transform: translate3d(-0.7%, -0.5%, 0) scale(1) rotate(-0.35deg); }
+  to   { transform: translate3d(0.7%, 0.5%, 0) scale(1.015) rotate(0.35deg); }
+}
+
+/* ---- champion halo: pulsing ring behind the #1 star ---- */
+.plan-halo {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(245, 196, 81, 0.28) 0%, transparent 62%);
+  animation: haloPulse 4s ease-in-out infinite;
+}
+
+@keyframes haloPulse {
+  0%, 100% { opacity: 0.5; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.12); }
+}
+
+/* ---- constellation lines: draw in, then shimmer ---- */
+.plan-line {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  animation: lineDraw 1.6s ease-out forwards, lineShimmer 5s ease-in-out infinite 2s;
+}
+
+@keyframes lineDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes lineShimmer {
+  0%, 100% { stroke-opacity: 0.18; }
+  50% { stroke-opacity: 0.42; }
+}
+
+/* ---- shooting stars ---- */
+.plan-meteors {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.meteor {
+  position: absolute;
+  top: -6%;
+  width: 140px;
+  height: 1.5px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0));
+  filter: drop-shadow(0 0 6px rgba(200, 220, 255, 0.8));
+  transform: rotate(28deg);
+  opacity: 0;
+  animation: meteorFly 9s linear infinite;
+}
+
+.meteor.m1 { left: 12%; animation-delay: 2s; animation-duration: 8s; }
+.meteor.m2 { left: 44%; animation-delay: 5.5s; animation-duration: 11s; }
+.meteor.m3 { left: 68%; animation-delay: 9s; animation-duration: 7.5s; }
+.meteor.m4 { left: 84%; animation-delay: 13s; animation-duration: 12s; }
+
+@keyframes meteorFly {
+  0% { opacity: 0; transform: translate(0, 0) rotate(28deg); }
+  6% { opacity: 1; }
+  18% { opacity: 0; }
+  100% { opacity: 0; transform: translate(-46vw, 90vh) rotate(28deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plan-dome { animation: none; }
+  .meteor { display: none; }
+  .plan-line { animation: lineDraw 0.8s ease-out forwards; }
+  .plan-star { animation: starIn 0.5s ease both !important; }
 }
 
 .plan-crown {
