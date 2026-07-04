@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchOfficialTrending, formatStars, LANGUAGE_COLORS } from "../api";
 
 const hash = (s) => {
@@ -29,6 +29,10 @@ export default function Planetarium({ onClose }) {
   const [error, setError] = useState(null);
   const [hover, setHover] = useState(null);
 
+  const starRefs = useRef([]);
+  const lineRefs = useRef([]);
+  const labelRefs = useRef([]);
+
   useEffect(() => {
     fetchOfficialTrending("daily")
       .then((items) => setRepos(items.slice(0, 24)))
@@ -47,7 +51,8 @@ export default function Planetarium({ onClose }) {
   }, [onClose]);
 
   // Deterministic star placement: grid cells shuffled by a daily seed,
-  // jittered within each cell so nothing overlaps.
+  // jittered within each cell so nothing overlaps. Each star also gets a
+  // random phase so it sways on its own tempo.
   const stars = useMemo(() => {
     if (!repos) return [];
     const maxG = Math.max(...repos.map((r) => r.gained ?? 1), 1);
@@ -65,7 +70,8 @@ export default function Planetarium({ onClose }) {
       const x = ((col + 0.2 + rnd() * 0.6) / cols) * 100;
       const y = 12 + ((row + 0.2 + rnd() * 0.6) / rows) * 68;
       const size = 10 + 34 * Math.sqrt((r.gained ?? 1) / maxG);
-      return { repo: r, x, y, size, rank: i + 1 };
+      const phase = rnd() * Math.PI * 2;
+      return { repo: r, x, y, size, rank: i + 1, idx: i, phase };
     });
   }, [repos]);
 
@@ -80,6 +86,66 @@ export default function Planetarium({ onClose }) {
       .filter(([, g]) => g.length >= 2)
       .map(([lang, g]) => ({ lang, pts: [...g].sort((a, b) => a.x - b.x) }));
   }, [stars]);
+
+  // ---- the jelly ----
+  // Every frame, each star drifts by two summed sine waves: one keyed to its
+  // own phase (individual jitter) and one keyed to its position (a slow wave
+  // that travels across the whole field, so neighbours move together and the
+  // constellation undulates as one soft body). Constellation lines are redrawn
+  // to the live positions each frame so they stretch and bend with the stars.
+  useEffect(() => {
+    if (!stars.length) return;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) return;
+
+    let raf;
+    const start = performance.now();
+    const loop = (now) => {
+      const t = (now - start) / 1000;
+      const W = window.innerWidth || 1;
+      const H = window.innerHeight || 1;
+
+      const offs = stars.map((st) => {
+        const ox = 1.0 * Math.sin(0.6 * t + st.phase) + 0.9 * Math.sin(0.32 * t + st.y * 0.05);
+        const oy = 1.4 * Math.sin(0.5 * t + st.phase * 1.4) + 1.0 * Math.sin(0.4 * t + st.x * 0.05);
+        return [ox, oy];
+      });
+
+      for (let i = 0; i < stars.length; i++) {
+        const el = starRefs.current[i];
+        if (!el) continue;
+        const [ox, oy] = offs[i];
+        el.style.setProperty("--jx", `${((ox / 100) * W).toFixed(2)}px`);
+        el.style.setProperty("--jy", `${((oy / 100) * H).toFixed(2)}px`);
+      }
+
+      for (let ci = 0; ci < constellations.length; ci++) {
+        const c = constellations[ci];
+        const poly = lineRefs.current[ci];
+        if (poly) {
+          poly.setAttribute(
+            "points",
+            c.pts
+              .map((p) => {
+                const [ox, oy] = offs[p.idx];
+                return `${(p.x + ox).toFixed(2)},${(p.y + oy).toFixed(2)}`;
+              })
+              .join(" ")
+          );
+        }
+        const lab = labelRefs.current[ci];
+        if (lab) {
+          const [ox, oy] = offs[c.pts[0].idx];
+          lab.style.setProperty("--jx", `${((ox / 100) * W).toFixed(2)}px`);
+          lab.style.setProperty("--jy", `${((oy / 100) * H).toFixed(2)}px`);
+        }
+      }
+
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [stars, constellations]);
 
   return (
     <div className="planetarium">
@@ -111,93 +177,92 @@ export default function Planetarium({ onClose }) {
       </div>
 
       <div className="plan-dome">
-      <svg className="plan-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <svg className="plan-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+          {constellations.map((c, ci) => (
+            <polyline
+              key={c.lang}
+              ref={(el) => (lineRefs.current[ci] = el)}
+              className="plan-line"
+              points={c.pts.map((p) => `${p.x},${p.y}`).join(" ")}
+              fill="none"
+              stroke={LANGUAGE_COLORS[c.lang] ?? "#8b949e"}
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+              style={{ animationDelay: `${0.4 + ci * 0.25}s` }}
+            />
+          ))}
+        </svg>
+
         {constellations.map((c, ci) => (
-          <polyline
+          <span
             key={c.lang}
-            className="plan-line"
-            points={c.pts.map((p) => `${p.x},${p.y}`).join(" ")}
-            fill="none"
-            stroke={LANGUAGE_COLORS[c.lang] ?? "#8b949e"}
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
-            style={{ animationDelay: `${0.4 + ci * 0.25}s` }}
-          />
-        ))}
-      </svg>
-
-      {constellations.map((c) => (
-        <span
-          key={c.lang}
-          className="plan-lang"
-          style={{
-            left: `${c.pts[0].x}%`,
-            top: `${c.pts[0].y}%`,
-            color: LANGUAGE_COLORS[c.lang] ?? "#8b949e",
-          }}
-        >
-          {c.lang}
-        </span>
-      ))}
-
-      {stars[0] && (
-        <span
-          className="plan-halo"
-          style={{
-            left: `${stars[0].x}%`,
-            top: `${stars[0].y}%`,
-            width: stars[0].size * 2.6,
-            height: stars[0].size * 2.6,
-            marginLeft: -(stars[0].size * 2.6) / 2,
-            marginTop: -(stars[0].size * 2.6) / 2,
-          }}
-        />
-      )}
-
-      {stars.map((st, i) => {
-        const delay = 0.2 + i * 0.05;
-        const twinkle = 2.6 + (i % 6) * 0.4;
-        return (
-          <button
-            key={st.repo.id}
-            className={`plan-star ${st.rank === 1 ? "champ" : ""}`}
+            ref={(el) => (labelRefs.current[ci] = el)}
+            className="plan-lang"
             style={{
-              left: `${st.x}%`,
-              top: `${st.y}%`,
-              width: st.size,
-              height: st.size,
-              marginLeft: -st.size / 2,
-              marginTop: -st.size / 2,
-              animationDelay: `${delay}s, ${delay + 0.7}s`,
-              animationDuration: `0.7s, ${twinkle}s`,
+              left: `${c.pts[0].x}%`,
+              top: `${c.pts[0].y}%`,
+              color: LANGUAGE_COLORS[c.lang] ?? "#8b949e",
             }}
-            onMouseEnter={() => setHover(st)}
-            onMouseLeave={() => setHover(null)}
-            onFocus={() => setHover(st)}
-            onBlur={() => setHover(null)}
-            onClick={() => window.open(st.repo.url, "_blank", "noopener")}
-            aria-label={`${st.repo.fullName}, rank ${st.rank} tonight`}
-          />
-        );
-      })}
+          >
+            {c.lang}
+          </span>
+        ))}
 
-      {stars[0] && (
-        <span className="plan-crown" style={{ left: `${stars[0].x}%`, top: `${stars[0].y}%` }}>
-          № 1 tonight
-        </span>
-      )}
+        {stars.map((st, i) => {
+          const delay = 0.2 + i * 0.05;
+          const twinkle = 2.6 + (i % 6) * 0.4;
+          const s = st.size;
+          return (
+            <span
+              key={st.repo.id}
+              ref={(el) => (starRefs.current[i] = el)}
+              className="star-node"
+              style={{ left: `${st.x}%`, top: `${st.y}%` }}
+            >
+              {i === 0 && (
+                <span
+                  className="plan-halo"
+                  style={{
+                    width: s * 2.6,
+                    height: s * 2.6,
+                    marginLeft: -(s * 2.6) / 2,
+                    marginTop: -(s * 2.6) / 2,
+                  }}
+                />
+              )}
+              <button
+                className={`plan-star ${st.rank === 1 ? "champ" : ""}`}
+                style={{
+                  width: s,
+                  height: s,
+                  marginLeft: -s / 2,
+                  marginTop: -s / 2,
+                  animationDelay: `${delay}s, ${delay + 0.7}s`,
+                  animationDuration: `0.7s, ${twinkle}s`,
+                }}
+                onMouseEnter={() => setHover(st)}
+                onMouseLeave={() => setHover(null)}
+                onFocus={() => setHover(st)}
+                onBlur={() => setHover(null)}
+                onClick={() => window.open(st.repo.url, "_blank", "noopener")}
+                aria-label={`${st.repo.fullName}, rank ${st.rank} tonight`}
+              />
+              {i === 0 && <span className="plan-crown">№ 1 tonight</span>}
+            </span>
+          );
+        })}
 
-      {hover && (
-        <div className="plan-tooltip" style={{ left: `${hover.x}%`, top: `${hover.y}%` }}>
-          <div className="tt-rank">#{hover.rank} tonight</div>
-          <div className="tt-name">
-            {hover.repo.owner} / <strong>{hover.repo.name}</strong>
+        {hover && (
+          <div className="plan-tooltip" style={{ left: `${hover.x}%`, top: `${hover.y}%` }}>
+            <div className="tt-rank">#{hover.rank} tonight</div>
+            <div className="tt-name">
+              {hover.repo.owner} / <strong>{hover.repo.name}</strong>
+            </div>
+            <div className="tt-gained">
+              +{formatStars(hover.repo.gained ?? 0)} today · ★ {formatStars(hover.repo.stars)} total
+            </div>
           </div>
-          <div className="tt-gained">
-            +{formatStars(hover.repo.gained ?? 0)} today · ★ {formatStars(hover.repo.stars)} total
-          </div>
-        </div>
-      )}
+        )}
       </div>
 
       <div className="plan-hint">
