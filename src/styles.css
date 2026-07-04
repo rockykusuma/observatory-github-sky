@@ -402,7 +402,7 @@ button {
 
 .plan-lang {
   position: absolute;
-  transform: translate(-50%, 26px);
+  transform: translate(calc(-50% + var(--jx, 0px)), calc(26px + var(--jy, 0px)));
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.16em;
@@ -411,8 +411,18 @@ button {
   pointer-events: none;
 }
 
+/* jelly wrapper: JS drives --jx/--jy every frame so the whole
+   star-and-line web undulates as one soft body */
+.star-node {
+  position: absolute;
+  transform: translate(var(--jx, 0px), var(--jy, 0px));
+  will-change: transform;
+}
+
 .plan-star {
   position: absolute;
+  left: 0;
+  top: 0;
   border-radius: 50%;
   background: radial-gradient(circle, #ffffff 0%, #c9d6ff 40%, transparent 72%);
   filter: drop-shadow(0 0 12px rgba(160, 180, 255, 0.6));
@@ -451,19 +461,13 @@ button {
 .plan-dome {
   position: absolute;
   inset: 0;
-  transform-origin: 50% 45%;
-  animation: domeDrift 48s ease-in-out infinite alternate;
-  will-change: transform;
-}
-
-@keyframes domeDrift {
-  from { transform: translate3d(-0.7%, -0.5%, 0) scale(1) rotate(-0.35deg); }
-  to   { transform: translate3d(0.7%, 0.5%, 0) scale(1.015) rotate(0.35deg); }
 }
 
 /* ---- champion halo: pulsing ring behind the #1 star ---- */
 .plan-halo {
   position: absolute;
+  left: 0;
+  top: 0;
   border-radius: 50%;
   pointer-events: none;
   background: radial-gradient(circle, rgba(245, 196, 81, 0.28) 0%, transparent 62%);
@@ -533,6 +537,8 @@ button {
 
 .plan-crown {
   position: absolute;
+  left: 0;
+  top: 0;
   transform: translate(-50%, -46px);
   font-family: var(--mono);
   font-size: 10px;
