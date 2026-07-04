@@ -103,16 +103,25 @@ export default function Planetarium({ onClose }) {
         </div>
       )}
 
+      <div className="plan-meteors" aria-hidden="true">
+        <span className="meteor m1" />
+        <span className="meteor m2" />
+        <span className="meteor m3" />
+        <span className="meteor m4" />
+      </div>
+
+      <div className="plan-dome">
       <svg className="plan-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
-        {constellations.map((c) => (
+        {constellations.map((c, ci) => (
           <polyline
             key={c.lang}
+            className="plan-line"
             points={c.pts.map((p) => `${p.x},${p.y}`).join(" ")}
             fill="none"
             stroke={LANGUAGE_COLORS[c.lang] ?? "#8b949e"}
-            strokeOpacity="0.28"
             strokeWidth="1"
             vectorEffect="non-scaling-stroke"
+            style={{ animationDelay: `${0.4 + ci * 0.25}s` }}
           />
         ))}
       </svg>
@@ -131,8 +140,23 @@ export default function Planetarium({ onClose }) {
         </span>
       ))}
 
+      {stars[0] && (
+        <span
+          className="plan-halo"
+          style={{
+            left: `${stars[0].x}%`,
+            top: `${stars[0].y}%`,
+            width: stars[0].size * 2.6,
+            height: stars[0].size * 2.6,
+            marginLeft: -(stars[0].size * 2.6) / 2,
+            marginTop: -(stars[0].size * 2.6) / 2,
+          }}
+        />
+      )}
+
       {stars.map((st, i) => {
         const delay = 0.2 + i * 0.05;
+        const twinkle = 2.6 + (i % 6) * 0.4;
         return (
           <button
             key={st.repo.id}
@@ -145,6 +169,7 @@ export default function Planetarium({ onClose }) {
               marginLeft: -st.size / 2,
               marginTop: -st.size / 2,
               animationDelay: `${delay}s, ${delay + 0.7}s`,
+              animationDuration: `0.7s, ${twinkle}s`,
             }}
             onMouseEnter={() => setHover(st)}
             onMouseLeave={() => setHover(null)}
@@ -173,6 +198,7 @@ export default function Planetarium({ onClose }) {
           </div>
         </div>
       )}
+      </div>
 
       <div className="plan-hint">
         each star is a repository trending tonight · size = stars gained today · same-language

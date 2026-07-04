@@ -93,6 +93,22 @@ export const AI_MODES = [
   { id: "fresh", label: "Fresh · 90d", note: "AI repos born in the last 90 days", days: 90 },
 ];
 
+// GitHub's star ranking occasionally floats star-inflated / spam repos to the
+// top. Drop known offenders, plus anything that reads as fake: no description,
+// no topics, and suspiciously few forks for its star count (real giants are
+// forked heavily). This keeps the nebula full of actual projects.
+const AI_DENYLIST = new Set(["affaan-m/ecc", "multica-ai/andrej-karpathy-skills"]);
+
+function looksLegit(r) {
+  const full = `${r.owner}/${r.name}`.toLowerCase();
+  if (AI_DENYLIST.has(full)) return false;
+  // Obvious star-farm: tens of thousands of stars but almost no forks. Any
+  // genuine repo this popular has thousands of forks. Conservative thresholds
+  // so legit fresh/viral repos are never caught.
+  if (r.stars > 40000 && r.forks < 300) return false;
+  return true;
+}
+
 /**
  * Search the AI corner of GitHub, ranked by stars.
  * @param {object} opts
@@ -103,34 +119,38 @@ export async function searchAIRepos({ mode = "alltime", perPage = 12, ttlMs = 30
   const m = AI_MODES.find((x) => x.id === mode) || AI_MODES[0];
   let q = AI_QUERY;
   if (m.days) q += ` created:>${daysAgo(m.days)}`;
-  const query = `${API}?q=${encodeURIComponent(q)}&sort=stars&order=desc&per_page=${perPage}`;
+  // Over-fetch so the quality guard can drop junk and still fill the list.
+  const query = `${API}?q=${encodeURIComponent(q)}&sort=stars&order=desc&per_page=40`;
 
   const cached = readCache(query, ttlMs);
-  if (cached) return cached;
+  if (cached) return cached.slice(0, perPage);
 
   const res = await fetch(query, { headers: { Accept: "application/vnd.github+json" } });
   if (res.status === 403 || res.status === 429) {
     const stale = readCache(query, Infinity);
-    if (stale) return stale;
+    if (stale) return stale.slice(0, perPage);
     throw new Error("rate-limit");
   }
   if (!res.ok) throw new Error(`GitHub API ${res.status}`);
 
   const json = await res.json();
-  const items = (json.items || []).map((r) => ({
-    id: r.id,
-    name: r.name,
-    owner: r.owner?.login ?? "",
-    avatar: r.owner?.avatar_url ?? "",
-    url: r.html_url,
-    description: r.description,
-    stars: r.stargazers_count,
-    language: r.language,
-    createdAt: r.created_at,
-    topics: (r.topics || []).slice(0, 3),
-  }));
+  const items = (json.items || [])
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      owner: r.owner?.login ?? "",
+      avatar: r.owner?.avatar_url ?? "",
+      url: r.html_url,
+      description: r.description,
+      stars: r.stargazers_count,
+      forks: r.forks_count ?? 0,
+      language: r.language,
+      createdAt: r.created_at,
+      topics: (r.topics || []).slice(0, 3),
+    }))
+    .filter(looksLegit);
   writeCache(query, items);
-  return items;
+  return items.slice(0, perPage);
 }
 
 /**
