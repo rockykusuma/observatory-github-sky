@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getParam, setParam } from "./urlstate.js";
 import Starfield from "./components/Starfield.jsx";
 import Hero from "./components/Hero.jsx";
 import Almanac from "./components/Almanac.jsx";
@@ -21,7 +22,12 @@ import FieldNotes from "./components/FieldNotes.jsx";
 
 export default function App() {
   const [planetarium, setPlanetarium] = useState(false);
-  const [notes, setNotes] = useState(false);
+  // Deep link: ?notes=open lands straight in the Field Notes.
+  const [notes, setNotesState] = useState(() => getParam("notes") === "open");
+  const setNotes = (open) => {
+    setNotesState(open);
+    setParam("notes", open ? "open" : null);
+  };
 
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
