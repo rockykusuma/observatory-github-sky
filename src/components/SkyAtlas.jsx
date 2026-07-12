@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 // The site is a long night's observing session — this is the atlas page:
 // a sticky index of every instrument, with the active one lit.
 const SECTIONS = [
-  { id: "ask", label: "Ask" },
   { id: "skychart", label: "Sky Chart" },
   { id: "supernova", label: "Supernovae" },
   { id: "ai-nebula", label: "AI Nebula" },
@@ -11,9 +10,10 @@ const SECTIONS = [
   { id: "deep-field", label: "Deep Field" },
   { id: "telescope", label: "Telescope" },
   { id: "night-history", label: "History" },
-  { id: "eclipse", label: "Eclipse" },
   { id: "spectrograph", label: "Spectrograph" },
+  { id: "eclipse", label: "Eclipse" },
   { id: "your-sky", label: "Your Sky" },
+  { id: "ask", label: "Ask" },
   { id: "log", label: "Log" },
 ];
 
