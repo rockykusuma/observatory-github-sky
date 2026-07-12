@@ -6,13 +6,23 @@ The Observatory reimagines GitHub trending as an astronomical instrument: the fa
 
 ## Features
 
-- **Hero champion** — tonight's brightest repo, with a downloadable 1200×630 "champion card" (seeded starfield, nebula gradients, the repo avatar in a gold frame) ready for X/LinkedIn.
+- **Hero champion** — tonight's brightest repo, front and center.
 - **Daily Almanac** — the day's headline trending signal at a glance.
+- **Ask the Sky** — natural-language search: "rust cli tools >1k stars this year" becomes a GitHub catalog query via a zero-cost rule-based parser (languages, star ranges, time windows, activity, sort). Shows "understood as" chips so you see exactly how it read you.
 - **Sky Chart** — GitHub's official trending signal (stars gained per day).
+- **Supernova Watch** — transient-event survey: tonight's star gain vs. each repo's lifetime daily average. Spikes of 10×+ get a proper designation (SN 2026-07-12A), a Δ-magnitude (2.5·log₁₀ ratio), and a classification from Flare to Type Ia.
 - **Newborn Stars** — the brightest repositories born in the current window.
+- **Deep Field** — long-exposure hidden-gem survey: repos under 400 stars and 90 days old, scored on fork depth, push freshness, and issue traffic — signal before luminosity.
 - **The Telescope** — an archive you can point at any month back to 2008.
+- **This Night in History** — for every year since 2008, the brightest repo born within three nights of tonight's date.
+- **The Spectrograph** — point at any `owner/repo` (or GitHub URL): a cumulative star-history curve sampled from the stargazer record, a stellar classification (Protostar → Hypergiant), lifetime star velocity, and vital signs.
 - **Eclipse Watch** — head-to-head repo rivalries (Vue vs React, PyTorch vs TensorFlow, Deno vs Node, Zed vs VS Code, or any `owner/repo` pair) with a proportional gap bar, lifetime star velocity, and an extrapolated "eclipse date."
-- **Planetarium mode** — full-screen immersive view.
+- **Your Sky** — enter any GitHub username: their repos drawn as a personal constellation, combined luminosity, brightest star, and vitals.
+- **Observer's Log** — a nightly journal entry composed (templated, no LLM) from the night's data: champion, total sky brightening, dominant language.
+- **Planetarium mode** — a living sky: a cinematic Night Tour flies through tonight's top five, then hands over a zoomable, pannable 3D dome (wheel/pinch/drag) where depth = repo mass, labels resolve as you zoom, supernovae detonate on the biggest gainers, and shooting stars are real newborn repos.
+- **Sky Atlas** — sticky scroll-spy navigation across all instruments.
+- **Deep links** — every instrument is shareable: `?ask=rust+cli+tools`, `?scope=owner/repo`, `?sky=2015-03`, `?vs=a/b,c/d`, `?observer=username`.
+- **Bring your own token** — optional GitHub PAT (⚙ in the masthead, localStorage only, no scopes needed) lifts rate limits from 10→30 search req/min and 60→5000 core req/hr.
 
 ## Tech
 

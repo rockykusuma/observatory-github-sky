@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { fetchRepo, formatStars } from "../api";
+import { getParam, setParam, revealSection } from "../urlstate";
 
 const RIVALRIES = [
   { label: "Vue vs React", a: "vuejs/vue", b: "facebook/react" },
@@ -66,7 +67,18 @@ function StarDisc({ repo, isLeader }) {
 }
 
 export default function EclipseWatch() {
-  const [pair, setPair] = useState(RIVALRIES[0]);
+  const [pair, setPair] = useState(() => {
+    // Deep link: ?vs=owner/a,owner/b
+    const vs = (getParam("vs") || "").split(",");
+    if (vs.length === 2 && vs[0].includes("/") && vs[1].includes("/")) {
+      return { label: "custom", a: vs[0].trim(), b: vs[1].trim() };
+    }
+    return RIVALRIES[0];
+  });
+
+  useEffect(() => {
+    if (getParam("vs")) revealSection("eclipse");
+  }, []);
   const [inputA, setInputA] = useState("");
   const [inputB, setInputB] = useState("");
   const [data, setData] = useState(null);
@@ -85,7 +97,9 @@ export default function EclipseWatch() {
   const observe = (e) => {
     e.preventDefault();
     if (inputA.includes("/") && inputB.includes("/")) {
-      setPair({ label: "custom", a: inputA.trim(), b: inputB.trim() });
+      const a = inputA.trim(), b = inputB.trim();
+      setPair({ label: "custom", a, b });
+      setParam("vs", `${a},${b}`);
     }
   };
 
@@ -109,7 +123,10 @@ export default function EclipseWatch() {
             <button
               key={r.label}
               className={`tab ${r.label === pair.label ? "active" : ""}`}
-              onClick={() => setPair(r)}
+              onClick={() => {
+                setPair(r);
+                setParam("vs", `${r.a},${r.b}`);
+              }}
             >
               {r.label === pair.label && (
                 <motion.span

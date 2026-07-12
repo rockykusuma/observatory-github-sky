@@ -3,6 +3,36 @@
 
 const API = "https://api.github.com/search/repositories";
 
+// ---------- optional personal access token (BYO, localStorage only) ----------
+// Unauthenticated: 10 search req/min, 60 core req/hr. With any PAT (no scopes
+// needed): 30 search req/min, 5000 core req/hr. The token never leaves the
+// visitor's browser.
+const TOKEN_KEY = "observatory:token";
+
+export function getToken() {
+  try {
+    return localStorage.getItem(TOKEN_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
+export function setToken(t) {
+  try {
+    if (t) localStorage.setItem(TOKEN_KEY, t.trim());
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    /* fine */
+  }
+}
+
+export function ghHeaders(accept = "application/vnd.github+json") {
+  const h = { Accept: accept };
+  const t = getToken();
+  if (t) h.Authorization = `Bearer ${t}`;
+  return h;
+}
+
 const iso = (d) => d.toISOString().slice(0, 10);
 
 export function daysAgo(n) {
@@ -53,7 +83,7 @@ export async function searchTopRepos({ from, to, language, perPage = 10, ttlMs =
   if (cached) return cached;
 
   const res = await fetch(query, {
-    headers: { Accept: "application/vnd.github+json" },
+    headers: ghHeaders(),
   });
 
   if (res.status === 403 || res.status === 429) {
@@ -125,7 +155,7 @@ export async function searchAIRepos({ mode = "alltime", perPage = 12, ttlMs = 30
   const cached = readCache(query, ttlMs);
   if (cached) return cached.slice(0, perPage);
 
-  const res = await fetch(query, { headers: { Accept: "application/vnd.github+json" } });
+  const res = await fetch(query, { headers: ghHeaders() });
   if (res.status === 403 || res.status === 429) {
     const stale = readCache(query, Infinity);
     if (stale) return stale.slice(0, perPage);
@@ -210,7 +240,7 @@ export async function fetchRepo(fullName) {
   const cached = readCache(url, 60 * 60 * 1000);
   if (cached) return cached;
 
-  const res = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
+  const res = await fetch(url, { headers: ghHeaders() });
   if (res.status === 403 || res.status === 429) {
     const stale = readCache(url, Infinity);
     if (stale) return stale;
@@ -230,6 +260,158 @@ export async function fetchRepo(fullName) {
     createdAt: r.created_at,
     language: r.language,
     description: r.description,
+    forks: r.forks_count ?? 0,
+    openIssues: r.open_issues_count ?? 0,
+    pushedAt: r.pushed_at,
+    topics: (r.topics || []).slice(0, 5),
+  };
+  writeCache(url, data);
+  return data;
+}
+
+// ---------- Spectrograph: sampled star history ----------
+// GitHub has no star-history endpoint. But the stargazers list, with the
+// `star+json` media type, carries a `starred_at` timestamp per stargazer —
+// and it's paginated in order. So the first stargazer on page N is star
+// number (N-1)*100. Sampling a handful of pages sketches the whole
+// cumulative curve for the price of ~6 requests. Pagination caps at page
+// 400 (star #40,000); beyond that we bridge to today's total.
+const STAR_PAGE = 100;
+const STAR_PAGE_CAP = 400;
+
+export async function fetchStarHistory(fullName, totalStars) {
+  const key = `starhist:${fullName}:${Math.floor(totalStars / 500)}`;
+  const cached = readCache(key, 24 * 60 * 60 * 1000);
+  if (cached) return cached;
+
+  const lastPage = Math.max(1, Math.min(Math.ceil(totalStars / STAR_PAGE), STAR_PAGE_CAP));
+  const n = Math.min(6, lastPage);
+  const pages = [...new Set(
+    Array.from({ length: n }, (_, i) => Math.max(1, Math.round(1 + (i * (lastPage - 1)) / Math.max(1, n - 1))))
+  )];
+
+  const results = await Promise.all(
+    pages.map(async (p) => {
+      const res = await fetch(
+        `https://api.github.com/repos/${fullName}/stargazers?per_page=${STAR_PAGE}&page=${p}`,
+        { headers: ghHeaders("application/vnd.github.star+json") }
+      );
+      if (res.status === 403 || res.status === 429) throw new Error("rate-limit");
+      if (!res.ok) return null;
+      const arr = await res.json();
+      const first = arr?.[0]?.starred_at;
+      return first ? { t: first, s: (p - 1) * STAR_PAGE } : null;
+    })
+  );
+
+  const points = results.filter(Boolean).sort((a, b) => new Date(a.t) - new Date(b.t));
+  writeCache(key, points);
+  return points;
+}
+
+// ---------- Ask the Sky ----------
+/** Generic repo search from a prebuilt qualifier string (see nlq.js). */
+export async function searchRepos({ q, sort = "stars", perPage = 12, ttlMs = 10 * 60 * 1000 }) {
+  const query = `${API}?q=${encodeURIComponent(q)}&sort=${sort}&order=desc&per_page=${perPage}`;
+
+  const cached = readCache(query, ttlMs);
+  if (cached) return cached;
+
+  const res = await fetch(query, { headers: ghHeaders() });
+  if (res.status === 403 || res.status === 429) {
+    const stale = readCache(query, Infinity);
+    if (stale) return stale;
+    throw new Error("rate-limit");
+  }
+  if (res.status === 422) throw new Error("bad-query");
+  if (!res.ok) throw new Error(`GitHub API ${res.status}`);
+
+  const json = await res.json();
+  const items = (json.items || []).map((r) => ({
+    id: r.id,
+    name: r.name,
+    fullName: r.full_name,
+    owner: r.owner?.login ?? "",
+    avatar: r.owner?.avatar_url ?? "",
+    url: r.html_url,
+    description: r.description,
+    stars: r.stargazers_count,
+    forks: r.forks_count ?? 0,
+    language: r.language,
+    createdAt: r.created_at,
+    pushedAt: r.pushed_at,
+  }));
+  writeCache(query, items);
+  return items;
+}
+
+// ---------- Deep Field ----------
+// One search over young, modestly-starred repos; the gem scoring happens
+// client-side (fork/star depth + push freshness), so this costs a single
+// request per language.
+export async function searchDeepField({ language, ttlMs = 30 * 60 * 1000 } = {}) {
+  let q = `created:>${daysAgo(90)} stars:40..400 fork:false`;
+  if (language && language !== "all") q += ` language:"${language}"`;
+  const query = `${API}?q=${encodeURIComponent(q)}&sort=stars&order=desc&per_page=60`;
+
+  const cached = readCache(query, ttlMs);
+  if (cached) return cached;
+
+  const res = await fetch(query, { headers: ghHeaders() });
+  if (res.status === 403 || res.status === 429) {
+    const stale = readCache(query, Infinity);
+    if (stale) return stale;
+    throw new Error("rate-limit");
+  }
+  if (!res.ok) throw new Error(`GitHub API ${res.status}`);
+
+  const json = await res.json();
+  const items = (json.items || []).map((r) => ({
+    id: r.id,
+    name: r.name,
+    fullName: r.full_name,
+    owner: r.owner?.login ?? "",
+    avatar: r.owner?.avatar_url ?? "",
+    url: r.html_url,
+    description: r.description,
+    stars: r.stargazers_count,
+    forks: r.forks_count ?? 0,
+    openIssues: r.open_issues_count ?? 0,
+    language: r.language,
+    createdAt: r.created_at,
+    pushedAt: r.pushed_at,
+    topics: (r.topics || []).slice(0, 3),
+  }));
+  writeCache(query, items);
+  return items;
+}
+
+// ---------- Your Sky ----------
+/** Fetch a GitHub user's public profile (for the personal constellation). */
+export async function fetchUser(username) {
+  const url = `https://api.github.com/users/${encodeURIComponent(username)}`;
+  const cached = readCache(url, 60 * 60 * 1000);
+  if (cached) return cached;
+
+  const res = await fetch(url, { headers: ghHeaders() });
+  if (res.status === 403 || res.status === 429) {
+    const stale = readCache(url, Infinity);
+    if (stale) return stale;
+    throw new Error("rate-limit");
+  }
+  if (res.status === 404) throw new Error("not-found");
+  if (!res.ok) throw new Error(`user ${res.status}`);
+
+  const u = await res.json();
+  const data = {
+    login: u.login,
+    name: u.name,
+    avatar: u.avatar_url,
+    url: u.html_url,
+    bio: u.bio,
+    followers: u.followers,
+    publicRepos: u.public_repos,
+    createdAt: u.created_at,
   };
   writeCache(url, data);
   return data;

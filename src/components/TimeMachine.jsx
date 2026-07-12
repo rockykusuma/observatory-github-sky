@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { searchTopRepos, monthWindow, formatStars, LANGUAGE_COLORS } from "../api";
+import { getParam, setParam, revealSection } from "../urlstate";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -11,8 +12,20 @@ const MEDALS = ["🥇", "🥈", "🥉"];
 
 export default function TimeMachine() {
   const now = new Date();
-  const [year, setYear] = useState(now.getFullYear() - 5);
-  const [month, setMonth] = useState(now.getMonth() + 1);
+  // Deep link: ?sky=YYYY-MM points the telescope at that month.
+  const linked = /^20[0-2]\d-(0[1-9]|1[0-2])$/.test(getParam("sky") || "") ? getParam("sky") : null;
+  const [year, setYear] = useState(linked ? +linked.slice(0, 4) : now.getFullYear() - 5);
+  const [month, setMonth] = useState(linked ? +linked.slice(5) : now.getMonth() + 1);
+
+  useEffect(() => {
+    if (linked) revealSection("telescope");
+  }, []);
+
+  const retune = (y, m) => {
+    setYear(y);
+    setMonth(m);
+    setParam("sky", `${y}-${String(m).padStart(2, "0")}`);
+  };
   const [repos, setRepos] = useState(null);
   const [error, setError] = useState(null);
 
@@ -52,12 +65,12 @@ export default function TimeMachine() {
 
       <div className="telescope">
         <div className="telescope-dials">
-          <select className="select" value={month} onChange={(e) => setMonth(+e.target.value)}>
+          <select className="select" value={month} onChange={(e) => retune(year, +e.target.value)}>
             {MONTHS.map((m, i) => (
               <option key={m} value={i + 1}>{m}</option>
             ))}
           </select>
-          <select className="select" value={year} onChange={(e) => setYear(+e.target.value)}>
+          <select className="select" value={year} onChange={(e) => retune(+e.target.value, month)}>
             {years.map((y) => (
               <option key={y} value={y}>{y}</option>
             ))}
