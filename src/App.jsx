@@ -17,9 +17,11 @@ import ObserversLog from "./components/ObserversLog.jsx";
 import SkyAtlas from "./components/SkyAtlas.jsx";
 import Settings from "./components/Settings.jsx";
 import Planetarium from "./components/Planetarium.jsx";
+import FieldNotes from "./components/FieldNotes.jsx";
 
 export default function App() {
   const [planetarium, setPlanetarium] = useState(false);
+  const [notes, setNotes] = useState(false);
 
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -39,6 +41,9 @@ export default function App() {
           </div>
           <div className="masthead-right">
             <span className="masthead-date">{today}</span>
+            <button className="btn-planetarium" onClick={() => setNotes(true)}>
+              ✎ Field Notes
+            </button>
             <Settings />
             <button className="btn-planetarium" onClick={() => setPlanetarium(true)}>
               ✦ Planetarium
@@ -80,12 +85,17 @@ export default function App() {
             data: <a href="https://docs.github.com/en/rest/search" target="_blank" rel="noreferrer">GitHub Search API</a>
             {" + "}
             <a href="https://github.com/trending" target="_blank" rel="noreferrer">github.com/trending</a>
+            {" · "}
+            <button className="colophon-link" onClick={() => setNotes(true)}>
+              how the instrument works
+            </button>
             {" · "}built under clear skies
           </span>
         </footer>
       </div>
 
       {planetarium && <Planetarium onClose={() => setPlanetarium(false)} />}
+      {notes && <FieldNotes onClose={() => setNotes(false)} />}
     </>
   );
 }

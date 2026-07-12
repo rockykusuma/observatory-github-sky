@@ -1829,6 +1829,119 @@ button {
   margin: 0;
 }
 
+/* ---------- field notes ---------- */
+.fieldnotes {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 120%, rgba(99, 102, 241, 0.1), transparent 70%),
+    #04060d;
+  animation: domeFade 0.4s ease both;
+}
+
+.fn-scroll {
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-bright) transparent;
+}
+
+.fn-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.fn-scroll::-webkit-scrollbar-thumb {
+  background: var(--line-bright);
+  border-radius: 4px;
+}
+
+.fn-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.fn-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 110px 24px 80px;
+}
+
+.fn-intro {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--ink-dim);
+  margin-bottom: 40px;
+}
+
+.fn-note {
+  position: relative;
+  padding: 0 0 34px 56px;
+  border-left: 1px solid var(--line);
+  margin-left: 14px;
+}
+
+.fn-num {
+  position: absolute;
+  left: -15px;
+  top: -2px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--gold);
+  background: var(--panel-solid);
+  border: 1px solid var(--line-bright);
+  border-radius: 50%;
+}
+
+.fn-title {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 19px;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.fn-body {
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--ink-dim);
+}
+
+.fn-body code {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--gold);
+  background: rgba(245, 196, 81, 0.08);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+
+.fn-outro {
+  font-family: var(--serif);
+  font-style: italic;
+  text-align: center;
+  color: var(--ink-faint);
+  margin-top: 24px;
+}
+
+.colophon-link {
+  font-size: inherit;
+  color: var(--ink-dim);
+  border-bottom: 1px dotted var(--ink-faint);
+  padding: 0;
+}
+
+.colophon-link:hover {
+  color: var(--gold);
+}
+
 /* ---------- responsive ---------- */
 @media (max-width: 640px) {
   .nh-row {
@@ -1938,6 +2051,15 @@ button {
   .sn-baseline {
     display: block;
     margin-top: 2px;
+  }
+
+  .fn-inner {
+    padding: 90px 18px 60px;
+  }
+
+  .fn-note {
+    padding-left: 38px;
+    margin-left: 10px;
   }
 
   .spectro-class {
