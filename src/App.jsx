@@ -2,11 +2,20 @@ import { useState } from "react";
 import Starfield from "./components/Starfield.jsx";
 import Hero from "./components/Hero.jsx";
 import Almanac from "./components/Almanac.jsx";
+import AskTheSky from "./components/AskTheSky.jsx";
 import SkyChart from "./components/SkyChart.jsx";
 import AINebula from "./components/AINebula.jsx";
 import Leaderboard from "./components/Leaderboard.jsx";
 import TimeMachine from "./components/TimeMachine.jsx";
 import EclipseWatch from "./components/EclipseWatch.jsx";
+import SupernovaWatch from "./components/SupernovaWatch.jsx";
+import DeepField from "./components/DeepField.jsx";
+import NightHistory from "./components/NightHistory.jsx";
+import Spectrograph from "./components/Spectrograph.jsx";
+import YourSky from "./components/YourSky.jsx";
+import ObserversLog from "./components/ObserversLog.jsx";
+import SkyAtlas from "./components/SkyAtlas.jsx";
+import Settings from "./components/Settings.jsx";
 import Planetarium from "./components/Planetarium.jsx";
 
 export default function App() {
@@ -30,19 +39,29 @@ export default function App() {
           </div>
           <div className="masthead-right">
             <span className="masthead-date">{today}</span>
+            <Settings />
             <button className="btn-planetarium" onClick={() => setPlanetarium(true)}>
               ✦ Planetarium
             </button>
           </div>
         </header>
 
+        <SkyAtlas />
+
         <Hero />
         <Almanac />
+        <AskTheSky />
         <SkyChart />
+        <SupernovaWatch />
         <AINebula />
         <Leaderboard />
+        <DeepField />
         <TimeMachine />
+        <NightHistory />
         <EclipseWatch />
+        <Spectrograph />
+        <YourSky />
+        <ObserversLog />
 
         <footer className="colophon">
           <span>

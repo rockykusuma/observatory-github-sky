@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, animate, useMotionValue, useTransform } from "framer-motion";
 import { searchTopRepos, fetchOfficialTrending, daysAgo, formatStars } from "../api";
-import { downloadChampionCard } from "../cardgen";
 
 function CountUp({ value }) {
   const mv = useMotionValue(0);
@@ -133,17 +132,6 @@ export default function Hero() {
                 <div className="stat-label">written in</div>
               </div>
             )}
-            <button
-              className="btn-card"
-              title="Download a shareable champion card (PNG)"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                downloadChampionCard(champ);
-              }}
-            >
-              ↓ save card
-            </button>
           </div>
         </motion.a>
       )}

@@ -402,20 +402,23 @@ button {
 
 .plan-lang {
   position: absolute;
-  transform: translate(calc(-50% + var(--jx, 0px)), calc(26px + var(--jy, 0px)));
+  left: 0;
+  top: 0;
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   opacity: 0.55;
   pointer-events: none;
+  will-change: transform;
 }
 
-/* jelly wrapper: JS drives --jx/--jy every frame so the whole
-   star-and-line web undulates as one soft body */
+/* star wrapper: JS drives the full transform every frame — camera pan/zoom,
+   per-depth parallax, and a soft jelly sway all composed into one translate */
 .star-node {
   position: absolute;
-  transform: translate(var(--jx, 0px), var(--jy, 0px));
+  left: 0;
+  top: 0;
   will-change: transform;
 }
 
@@ -427,9 +430,23 @@ button {
   background: radial-gradient(circle, #ffffff 0%, #c9d6ff 40%, transparent 72%);
   filter: drop-shadow(0 0 12px rgba(160, 180, 255, 0.6));
   cursor: pointer;
-  animation:
-    starIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both,
-    starPulse 3.2s ease-in-out infinite;
+  transform: scale(var(--k, 1));
+  animation: starPulse 3.2s ease-in-out infinite;
+}
+
+/* label that resolves as you zoom in (JS drives --lo) */
+.plan-starlabel {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, 14px);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--silver);
+  opacity: var(--lo, 0);
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
 }
 
 .plan-star.champ {
@@ -447,20 +464,39 @@ button {
   to { opacity: 1; }
 }
 
-@keyframes starIn {
-  from { opacity: 0; transform: scale(0); }
-  to { opacity: 1; transform: scale(1); }
-}
-
 @keyframes starPulse {
-  0%, 100% { opacity: 0.7; transform: scale(0.94); }
-  50% { opacity: 1; transform: scale(1.06); }
+  0%, 100% { opacity: 0.7; transform: scale(calc(var(--k, 1) * 0.94)); }
+  50% { opacity: 1; transform: scale(calc(var(--k, 1) * 1.06)); }
 }
 
-/* ---- animated dome: slow parallax drift of the whole sky ---- */
+/* ---- the dome: full-viewport interactive sky ---- */
 .plan-dome {
   position: absolute;
   inset: 0;
+}
+
+.plan-dome.grabby {
+  cursor: grab;
+}
+
+.plan-dome.grabby:active {
+  cursor: grabbing;
+}
+
+/* ---- milky way dust band ---- */
+.plan-milkyway {
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 38%,
+    rgba(148, 163, 216, 0.05) 46%,
+    rgba(199, 210, 232, 0.09) 50%,
+    rgba(148, 163, 216, 0.05) 54%,
+    transparent 62%
+  );
+  filter: blur(6px);
 }
 
 /* ---- champion halo: pulsing ring behind the #1 star ---- */
@@ -529,10 +565,10 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .plan-dome { animation: none; }
   .meteor { display: none; }
   .plan-line { animation: lineDraw 0.8s ease-out forwards; }
-  .plan-star { animation: starIn 0.5s ease both !important; }
+  .plan-star { animation: none; }
+  .nova { display: none; }
 }
 
 .plan-crown {
@@ -551,7 +587,10 @@ button {
 
 .plan-tooltip {
   position: absolute;
-  transform: translate(-50%, calc(-50% - 52px));
+  left: 0;
+  top: 0;
+  display: block;
+  transform: translate(-50%, calc(-100% - 26px));
   background: var(--panel-solid);
   border: 1px solid var(--line-bright);
   border-radius: 12px;
@@ -564,6 +603,7 @@ button {
 }
 
 .tt-rank {
+  display: block;
   font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -572,14 +612,190 @@ button {
 }
 
 .tt-name {
+  display: block;
   font-size: 13px;
   color: var(--ink);
 }
 
 .tt-gained {
+  display: block;
   font-size: 11.5px;
   color: var(--ink-dim);
   margin-top: 5px;
+}
+
+/* ---- night tour ---- */
+.plan-head-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.tour-card {
+  position: absolute;
+  left: 50%;
+  bottom: 56px;
+  transform: translateX(-50%);
+  z-index: 30;
+  width: min(480px, calc(100vw - 40px));
+  padding: 20px 24px;
+  border: 1px solid var(--line-bright);
+  border-radius: 16px;
+  background: rgba(10, 14, 28, 0.88);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  animation: tourIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  pointer-events: none;
+}
+
+@keyframes tourIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(24px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.tour-rank {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+
+.tour-name {
+  display: block;
+  font-family: var(--serif);
+  font-size: 20px;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.tour-desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-dim);
+  margin-bottom: 8px;
+}
+
+.tour-stats {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--silver);
+}
+
+.tour-dots {
+  display: flex;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.tour-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--line-bright);
+}
+
+.tour-dot.on {
+  background: var(--gold);
+  box-shadow: 0 0 8px var(--gold-glow);
+}
+
+/* ---- supernova detonation ---- */
+.nova {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  z-index: 25;
+}
+
+.nova-flash {
+  position: absolute;
+  left: -60px;
+  top: -60px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 250, 230, 0.95) 0%, rgba(245, 196, 81, 0.4) 35%, transparent 70%);
+  animation: novaFlash 2.4s ease-out both;
+}
+
+.nova-ring {
+  position: absolute;
+  left: -30px;
+  top: -30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(245, 196, 81, 0.8);
+  animation: novaRing 2.2s ease-out both;
+}
+
+.nova-ring.r2 {
+  animation-delay: 0.25s;
+  border-color: rgba(199, 210, 232, 0.6);
+}
+
+.nova-tag {
+  position: absolute;
+  left: 0;
+  top: -70px;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  white-space: nowrap;
+  text-shadow: 0 0 16px var(--gold-glow);
+  animation: novaTag 2.4s ease-out both;
+}
+
+@keyframes novaFlash {
+  0% { opacity: 0; transform: scale(0.2); }
+  12% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.6); }
+}
+
+@keyframes novaRing {
+  0% { opacity: 0.9; transform: scale(0.3); }
+  100% { opacity: 0; transform: scale(5); }
+}
+
+@keyframes novaTag {
+  0% { opacity: 0; }
+  15%, 75% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ---- labeled newborn meteor ---- */
+.meteor.tagged {
+  animation: meteorOnce 3.2s linear both;
+}
+
+.meteor-label {
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  transform: rotate(-28deg);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--silver);
+  white-space: nowrap;
+  text-shadow: 0 0 10px rgba(200, 220, 255, 0.6);
+}
+
+@keyframes meteorOnce {
+  0% { opacity: 0; transform: translate(0, 0) rotate(28deg); }
+  8% { opacity: 1; }
+  60% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-40vw, 80vh) rotate(28deg); }
 }
 
 .plan-hint {
@@ -962,26 +1178,6 @@ button {
   color: var(--bronze);
 }
 
-/* ---------- champion card button ---------- */
-.btn-card {
-  margin-left: auto;
-  align-self: center;
-  font-family: var(--mono);
-  font-size: 11.5px;
-  letter-spacing: 0.08em;
-  padding: 9px 16px;
-  border: 1px solid var(--line-bright);
-  border-radius: 999px;
-  color: var(--ink-dim);
-  transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
-}
-
-.btn-card:hover {
-  border-color: var(--gold);
-  color: var(--gold);
-  box-shadow: 0 0 20px rgba(245, 196, 81, 0.15);
-}
-
 /* ---------- eclipse watch ---------- */
 .eclipse-input {
   min-width: 180px;
@@ -1135,8 +1331,620 @@ button {
   color: var(--gold);
 }
 
+/* ---------- spectrograph ---------- */
+.spectro-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.spectro-id {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+.spectro-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  border: 1px solid var(--line-bright);
+  flex-shrink: 0;
+}
+
+.spectro-name {
+  display: block;
+  font-family: var(--serif);
+  font-size: 22px;
+  color: var(--ink);
+}
+
+.spectro-name .owner {
+  color: var(--ink-faint);
+}
+
+.spectro-id:hover .spectro-name {
+  color: var(--gold);
+}
+
+.spectro-class {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 10px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(10, 14, 28, 0.5);
+  text-align: right;
+}
+
+.spectro-class-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.spectro-class-name {
+  font-family: var(--serif);
+  font-size: 18px;
+  color: var(--cls, var(--gold));
+  text-shadow: 0 0 18px var(--cls, var(--gold));
+}
+
+.spectro-class-note {
+  font-size: 11px;
+  color: var(--ink-dim);
+  font-style: italic;
+}
+
+.spectro-stats {
+  margin: 18px 0 22px;
+}
+
+.spectro-chart svg {
+  width: 100%;
+  height: 220px;
+  display: block;
+}
+
+.spectro-line {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 6px var(--gold-glow));
+}
+
+.spectro-grid {
+  stroke: var(--line);
+  stroke-dasharray: 3 5;
+}
+
+.spectro-tick {
+  fill: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+/* ---------- sky atlas nav ---------- */
+.atlas {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  padding: 10px 6px;
+  margin: 0 -6px;
+  background: linear-gradient(180deg, rgba(5, 7, 15, 0.94), rgba(5, 7, 15, 0.82));
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+
+@media (max-width: 700px) {
+  .atlas {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+}
+
+.atlas::-webkit-scrollbar {
+  display: none;
+}
+
+.atlas-link {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  color: var(--ink-faint);
+  padding: 6px 10px;
+  border-radius: 999px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.atlas-link:hover {
+  color: var(--ink);
+}
+
+.atlas-link.active {
+  color: var(--gold);
+  background: rgba(245, 196, 81, 0.08);
+}
+
+.atlas-star {
+  margin-right: 5px;
+}
+
+/* ---------- settings (token) ---------- */
+.settings {
+  position: relative;
+}
+
+.btn-settings {
+  position: relative;
+}
+
+.token-dot {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6ee7a0;
+  box-shadow: 0 0 8px rgba(110, 231, 160, 0.7);
+}
+
+.settings-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  z-index: 60;
+  width: 320px;
+  padding: 18px;
+  border: 1px solid var(--line-bright);
+  border-radius: 14px;
+  background: var(--panel-solid);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+}
+
+.settings-title {
+  font-family: var(--serif);
+  font-size: 16px;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+
+.settings-text {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-dim);
+  margin-bottom: 12px;
+}
+
+.settings-text a {
+  color: var(--gold);
+  border-bottom: 1px dotted var(--gold);
+}
+
+.settings-input {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.settings-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-close {
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+.settings-close:hover {
+  color: var(--ink);
+}
+
+/* ---------- your sky ---------- */
+.yoursky-chart svg {
+  width: 100%;
+  height: 240px;
+  display: block;
+}
+
+.yoursky-line {
+  stroke: var(--line-bright);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.yoursky-star {
+  fill: var(--silver);
+  filter: drop-shadow(0 0 6px rgba(199, 210, 232, 0.6));
+}
+
+.yoursky-star.brightest {
+  fill: var(--gold);
+  filter: drop-shadow(0 0 12px var(--gold-glow));
+}
+
+.yoursky-label {
+  fill: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: 9px;
+}
+
+/* ---------- observer's log ---------- */
+.obs-log {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 34px 38px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(16, 22, 42, 0.7), rgba(10, 14, 28, 0.5));
+}
+
+.obs-dateline {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 16px;
+}
+
+.obs-line {
+  font-family: var(--serif);
+  font-size: 16.5px;
+  line-height: 1.85;
+  color: var(--ink);
+  font-style: italic;
+  margin-bottom: 10px;
+}
+
+.obs-signature {
+  margin-top: 18px;
+  text-align: right;
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--gold);
+  font-size: 14px;
+}
+
+/* ---------- ask the sky ---------- */
+.ask-form {
+  margin-bottom: 10px;
+}
+
+.ask-input {
+  flex: 1;
+  min-width: 240px;
+  font-family: var(--sans);
+}
+
+.ask-examples {
+  margin-bottom: 16px;
+}
+
+.ask-chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.ask-chips-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-right: 4px;
+}
+
+.ask-chip {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink);
+  border: 1px solid var(--line-bright);
+  border-radius: 999px;
+  padding: 4px 12px;
+  background: rgba(10, 14, 28, 0.5);
+}
+
+.ask-chip-k {
+  color: var(--gold);
+  margin-right: 4px;
+}
+
+/* ---------- supernova watch ---------- */
+.sn-row {
+  grid-template-columns: 74px 44px 1fr auto;
+}
+
+.sn-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.sn-ratio {
+  font-family: var(--mono);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--gold);
+  text-shadow: 0 0 14px var(--gold-glow);
+}
+
+.sn-mag {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+}
+
+.sn-designation {
+  margin-left: 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bronze);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  vertical-align: 2px;
+}
+
+.sn-baseline {
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+.gold-count {
+  color: var(--gold) !important;
+}
+
+/* ---------- deep field ---------- */
+.df-row {
+  grid-template-columns: 58px 44px 1fr auto;
+}
+
+.df-signal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.df-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 18px;
+}
+
+.df-bar {
+  width: 5px;
+  border-radius: 2px;
+  background: var(--line-bright);
+}
+
+.df-bar:nth-child(1) { height: 6px; }
+.df-bar:nth-child(2) { height: 10px; }
+.df-bar:nth-child(3) { height: 14px; }
+.df-bar:nth-child(4) { height: 18px; }
+
+.df-bar.lit {
+  background: var(--gold);
+  box-shadow: 0 0 8px var(--gold-glow);
+}
+
+.df-signal-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.df-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+/* ---------- this night in history ---------- */
+.nh-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+
+.nh-row {
+  display: grid;
+  grid-template-columns: 52px 18px 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.nh-year {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink-dim);
+  text-align: right;
+}
+
+.nh-node {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 10px var(--gold-glow);
+  justify-self: center;
+  position: relative;
+}
+
+.nh-node::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 10px;
+  width: 1px;
+  height: 44px;
+  background: var(--line);
+}
+
+.nh-row:last-child .nh-node::before {
+  display: none;
+}
+
+.nh-pending {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink-faint);
+  padding: 12px 0;
+}
+
+.nh-repo {
+  margin: 0;
+}
+
 /* ---------- responsive ---------- */
 @media (max-width: 640px) {
+  .nh-row {
+    grid-template-columns: 40px 14px 1fr;
+  }
+
+  .sn-row {
+    grid-template-columns: 64px 1fr auto;
+  }
+
+  .df-row {
+    grid-template-columns: 48px 1fr auto;
+  }
+
+  .masthead {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 18px 0;
+  }
+
+  .masthead-right {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .masthead-date {
+    display: none;
+  }
+
+  .tabs {
+    flex-wrap: wrap;
+    border-radius: 18px;
+  }
+
+  .ask-input,
+  .eclipse-input {
+    width: 100%;
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+
+  .champion-stats {
+    gap: 18px;
+  }
+
+  .settings-panel {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    top: 72px;
+    width: auto;
+  }
+
+  .eclipse-stage {
+    flex-wrap: wrap;
+  }
+
+  .obs-log {
+    padding: 24px 20px;
+  }
+
+  .obs-line {
+    font-size: 15px;
+  }
+
+  .spectro-head {
+    flex-direction: column;
+  }
+
+  .spectro-class {
+    align-self: stretch;
+  }
+
+  .plan-head {
+    padding: 14px 16px;
+    gap: 8px;
+  }
+
+  .plan-title {
+    font-size: 14px;
+  }
+
+  .plan-head-actions {
+    gap: 6px;
+  }
+
+  .plan-close {
+    padding: 7px 12px;
+    font-size: 11px;
+  }
+
+  .tour-card {
+    bottom: 20px;
+    padding: 16px 18px;
+  }
+
+  .tour-name {
+    font-size: 17px;
+  }
+
+  .plan-hint {
+    font-size: 9.5px;
+    bottom: 12px;
+  }
+
+  .df-meta,
+  .sn-baseline {
+    display: block;
+    margin-top: 2px;
+  }
+
+  .spectro-class {
+    align-items: flex-start;
+    text-align: left;
+  }
+
   .champion {
     padding: 28px 22px;
   }
