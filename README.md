@@ -21,6 +21,7 @@ The Observatory reimagines GitHub trending as an astronomical instrument: the fa
 - **Observer's Log** — a nightly journal entry composed (templated, no LLM) from the night's data: champion, total sky brightening, dominant language.
 - **Planetarium mode** — a living sky: a cinematic Night Tour flies through tonight's top five, then hands over a zoomable, pannable 3D dome (wheel/pinch/drag) where depth = repo mass, labels resolve as you zoom, supernovae detonate on the biggest gainers, and shooting stars are real newborn repos.
 - **Sky Atlas** — sticky scroll-spy navigation across all instruments.
+- **Field Notes** — an engineer's notebook overlay (✎ in the masthead) explaining every trick: stargazer-record sampling, the NL parser, supernova math, gem scoring, the trending proxy, cache-as-weather.
 - **Deep links** — every instrument is shareable: `?ask=rust+cli+tools`, `?scope=owner/repo`, `?sky=2015-03`, `?vs=a/b,c/d`, `?observer=username`.
 - **Bring your own token** — optional GitHub PAT (⚙ in the masthead, localStorage only, no scopes needed) lifts rate limits from 10→30 search req/min and 60→5000 core req/hr.
 
