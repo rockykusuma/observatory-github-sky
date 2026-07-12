@@ -50,17 +50,25 @@ export default function App() {
 
         <Hero />
         <Almanac />
-        <AskTheSky />
+
+        {/* tonight's sky, broad → faint */}
         <SkyChart />
         <SupernovaWatch />
         <AINebula />
         <Leaderboard />
         <DeepField />
+
+        {/* through time */}
         <TimeMachine />
         <NightHistory />
-        <EclipseWatch />
+
+        {/* instruments: one star → two → yours → any */}
         <Spectrograph />
+        <EclipseWatch />
         <YourSky />
+        <AskTheSky />
+
+        {/* closing entry */}
         <ObserversLog />
 
         <footer className="colophon">
