@@ -74,9 +74,10 @@ function writeCache(query, data) {
  * @param {number} [opts.perPage]
  * @param {number} [opts.ttlMs]  cache lifetime (Infinity for immutable past windows)
  */
-export async function searchTopRepos({ from, to, language, perPage = 10, ttlMs = 30 * 60 * 1000 }) {
+export async function searchTopRepos({ from, to, language, topic, perPage = 10, ttlMs = 30 * 60 * 1000 }) {
   let q = to ? `created:${from}..${to}` : `created:>${from}`;
   if (language && language !== "all") q += ` language:"${language}"`;
+  if (topic && topic !== "all") q += ` topic:${topic}`;
   const query = `${API}?q=${encodeURIComponent(q)}&sort=stars&order=desc&per_page=${perPage}`;
 
   const cached = readCache(query, ttlMs);
